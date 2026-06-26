@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DeathBack;
+
+use pocketmine\plugin\PluginBase;
+use pocketmine\event\Listener;
+use pocketmine\event\player\PlayerDeathEvent;
+use pocketmine\command\Command;
+use pocketmine\command\CommandSender;
+use pocketmine\player\Player;
+use pocketmine\world\Position;
+
+class Main extends PluginBase implements Listener{
+
+    /** @var Position[] */
+    private array $deathPositions = [];
+
+    public function onEnable() : void{
+        $this->getServer()->getPluginManager()->registerEvents($this, $this);
+    }
+
+    public function onDeath(PlayerDeathEvent $event) : void{
+        $player = $event->getPlayer();
+        $this->deathPositions[$player->getName()] = $player->getPosition();
+    }
+
+    public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
+        if(!$sender instanceof Player){
+            $sender->sendMessage("Este comando solo puede usarse dentro del juego.");
+            return true;
+        }
+
+        if($command->getName() === "back"){
+            if(!isset($this->deathPositions[$sender->getName()])){
+                $sender->sendMessage("§cNo tienes una ubicación de muerte guardada.");
+                return true;
+            }
+
+            $sender->teleport($this->deathPositions[$sender->getName()]);
+            $sender->sendMessage("§aHas regresado al lugar donde moriste.");
+            unset($this->deathPositions[$sender->getName()]);
+            return true;
+        }
+
+        return false;
+    }
+}
